@@ -1,4 +1,4 @@
-name: 'PR to Discord'
+name: Discord Notification
 
 on:
   pull_request:
@@ -8,41 +8,4 @@ jobs:
   PR:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up environment variables
-        shell: bash
-        env:
-          USERNAME: ${{ github.event.pull_request.user.login }}
-          AVATAR_URL: ${{ github.event.pull_request.user.avatar_url }}
-          TITLE: ${{ github.event.pull_request.title }}
-          URL: ${{ github.event.pull_request.html_url }}
-        run: |
-          echo "USERNAME=$USERNAME" >> $GITHUB_ENV
-          echo "AVATAR_URL=$AVATAR_URL" >> $GITHUB_ENV
-          echo "TITLE=$TITLE" >> $GITHUB_ENV
-          echo "URL=$URL" >> $GITHUB_ENV
-
-      - name: Send Discord Notification
-        shell: bash
-        env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          DATA: |
-            {
-              "username": "${{ env.USERNAME }}",
-              "avatar_url": "${{ env.AVATAR_URL }}",
-              "embeds": [
-                {
-                  "title": "${{ env.USERNAME }}",
-                  "description": "새로운 PR이 도착했습니다!",
-                  "url": "${{ env.URL }}",
-                  "color": 6847432,
-                  "fields": [
-                    {
-                      "name": "Title",
-                      "value": "${{ env.TITLE }}"
-                    }
-                  ]
-                }
-              ]
-            }
-        run: |
-          curl -X POST -H 'Content-type: application/json' -d "$DATA" $DISCORD_WEBHOOK_URL
+      - run: echo "Hello, World!"
