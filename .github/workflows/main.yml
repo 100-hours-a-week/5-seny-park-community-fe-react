@@ -8,28 +8,22 @@ jobs:
   PR:
     runs-on: ubuntu-latest
     steps:
-      - name: Get Pull Request Information
-        id: pr_info
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const pr = await github.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number
-            });
+      - name: Set up jq
+        run: sudo apt-get install jq
 
-            const reviewers = pr.data.requested_reviewers.map(reviewer => reviewer.login).join(", ");
-            return {
-              author: pr.data.user.login,
-              reviewers: reviewers
-            };
+      - name: Get PR Author
+        id: pr_author
+        run: echo "::set-output name=author::$(jq -r .pull_request.user.login <<< "$GITHUB_EVENT_PATH")"
+
+      - name: Get PR Reviewers
+        id: pr_reviewers
+        run: echo "::set-output name=reviewers::$(jq -r '[.pull_request.requested_reviewers[].login] | join(", ")' <<< "$GITHUB_EVENT_PATH")"
 
       - name: Send Discord Notification
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          PR_AUTHOR: ${{ steps.pr_info.outputs.author }}
-          PR_REVIEWERS: ${{ steps.pr_info.outputs.reviewers }}
+          PR_AUTHOR: ${{ steps.pr_author.outputs.author }}
+          PR_REVIEWERS: ${{ steps.pr_reviewers.outputs.reviewers }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
           curl -X POST -H "Content-Type: application/json" -d "$(jq -n --arg author "$PR_AUTHOR" --arg reviewers "$PR_REVIEWERS" --arg url "$PR_URL" '{
