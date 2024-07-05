@@ -8,14 +8,24 @@ jobs:
   PR:
     runs-on: ubuntu-latest
     steps:
+      - run: >
+          PROBLEM=$(
+            echo ${{ toJson(github.event.pull_request.body) }} |
+            grep -Pio 'http[\w\:\/\.-]+' |
+            head -1
+          );
+          echo "PROBLEM=$PROBLEM" >> $GITHUB_ENV
       - env:
           DATA: >
             {
+              "username": ${{ toJson(github.event.sender.login) }},
+              "avatar_url": ${{ toJson(github.event.sender.avatar_url) }},
               "embeds": [
                 {
-                  "title": "5-seny-park-community-fe-react",
-                  "description": "새로운 PR이 도착했습니다!\n\nhttps://www.acmicpc.net/problem/1756",
-                  "url": "https://github.com/Munbin-Lee/test/pull/1"
+                  "title": ${{ toJson(github.event.pull_request.title) }},
+                  "description": "새로운 PR이 도착했습니다!\n\n${{ env.PROBLEM }}",
+                  "url": ${{ toJson(github.event.pull_request.html_url) }},
+                  "color": 6847432
                 }
               ]
             }
@@ -24,4 +34,3 @@ jobs:
           POST -H 'Content-type:application/json'
           -d "$DATA"
           ${{ secrets.DISCORD_WEBHOOK_URL }}
-
