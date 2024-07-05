@@ -1,0 +1,11 @@
+name: Discord Notification
+
+on:
+  pull_request:
+    types: [opened, reopened]
+
+jobs:
+  PR:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "PR이 새로 업로드 됐습니다! 승인 부탁드려요"
