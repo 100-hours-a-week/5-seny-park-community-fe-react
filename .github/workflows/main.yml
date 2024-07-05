@@ -8,4 +8,35 @@ jobs:
   PR:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "PR이 새로 업로드 됐습니다! 승인 부탁드려요"
+      - name: Get Pull Request Information
+        id: pr_info
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const pr = await github.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number
+            });
+
+            const reviewers = pr.data.requested_reviewers.map(reviewer => reviewer.login).join(", ");
+            return {
+              author: pr.data.user.login,
+              reviewers: reviewers
+            };
+
+      - name: Send Discord Notification
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          PR_AUTHOR: ${{ steps.pr_info.outputs.author }}
+          PR_REVIEWERS: ${{ steps.pr_info.outputs.reviewers }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          curl -X POST -H "Content-Type: application/json" -d "$(jq -n --arg author "$PR_AUTHOR" --arg reviewers "$PR_REVIEWERS" --arg url "$PR_URL" '{
+            "embeds": [
+              {
+                "title": "새로운 PR이 도착했습니다!",
+                "description": "PR 생성자: \($author)\n검토 요청자: \($reviewers)\n\n\($url)"
+              }
+            ]
+          }')" $DISCORD_WEBHOOK_URL
